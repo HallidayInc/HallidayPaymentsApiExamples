@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const HALLIDAY_API_KEY = '_your_api_key_here_';
   const inputAsset = 'usd';
   const outputAsset = 'story:0x';
-  let radioButtons = [];
+  const radioButtons = [];
   const onramps = [ 'stripe', 'transak', 'moonpay' ];
   const fiatOnrampPayInMethods = [ 'CREDIT_CARD' ];
   const quotes = {};
@@ -132,12 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     data.failures.forEach((f, i) => {
       if (
-        f && f.issues && f.issues[0]
-        && f.issues[0].message
-        && f.issues[0].message.includes('Given amount is')
-        && f.issues[0].source
-        && quotes[f.issues[0].source]
-        && !quotes[f.issues[0].source].price
+        f?.issues?.[0]?.message?.includes('Given amount is') &&
+        f?.issues?.[0]?.source &&
+        !quotes?.[f.issues?.[0]?.source]?.price
       ) {
         const issue = f.issues[0];
         const onramp = issue.source;
@@ -166,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const data = await res.json();
     console.log('acceptQuote', data);
-    return data.payment_id;
+    return data;
   }
 
   function setUpdatedOutputAmount() {
@@ -197,9 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(loadingTimeout);
 
     loadingTimeout = setTimeout(async () => {
-      // Get a quote in own function
+      // Get a quote in its own function
       await getQuote(value);
-      // Set input using a function that checks the radio
+      // Set input using a function that checks the radio button
       setUpdatedOutputAmount();
       continueButton.classList.remove('loading');
       loadingTimeout = undefined;
@@ -229,16 +226,13 @@ document.addEventListener('DOMContentLoaded', () => {
     continueButton.classList.add('loading');
     continueButton.classList.remove('enabled');
 
-    const paymentId = await acceptQuote();
+    const acceptedQuote = await acceptQuote();
+    const paymentId = acceptedQuote.payment_id;
+    const onrampUrl = acceptedQuote.next_instruction.funding_page_url;
+
     paymentStatusInterval = setInterval(async () => {
       console.log('payment status:', paymentId, await getPaymentStatus(paymentId));
     }, 5000);
-
-    // Use this URL for the native provider payment pages
-    // const onrampUrl = `https://app.halliday.xyz/funding/${paymentId}`;
-
-    // Use this URL for the Halliday provider payment handler page
-    const onrampUrl = `https://app.halliday.xyz/payments/${paymentId}`;
 
     continueButton.classList.remove('loading');
 
