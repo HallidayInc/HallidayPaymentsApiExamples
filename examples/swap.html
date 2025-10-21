@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cross-chain Swap with Halliday</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="input-screen" class="container">
+    <h2 class="text-center">Cross-Chain Swap</h2>
+
+    <div class="connect-wallet-container">
+      <button class="button enabled hidden" id="connect-wallet">Connect Wallet</button>
+      <p class="info-label hidden" id="connected-wallet-info">
+        Connected wallet address to perform swap:
+        <br />
+        <span id="address" class="address-label"></span>
+        <br />
+        <button class="disconnect" id="disconnect">Disconnect</button>
+      </p>
+    </div>
+
+    <div class="input-section">
+      <div class="input-label">You pay</div>
+      <div class="input-container">
+        <input type="text" class="amount-input" id="amount-input" placeholder="-" autocomplete="off" value="">
+        <div class="input-available" id="input-available">Available in Wallet: -</div>
+        <div class="currency-label">
+          Base USDC <label alt="USDC on Base" class="token-icon usdc-icon"></label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="output-section">
+      <div class="output-label">You receive</div>
+      <div class="output-container">
+        <div class="output-amount" id="receive-amount">-</div>
+        <div class="output-usd" id="receive-usd">$-</div>
+        <div class="output-currency">
+          IP <img src="https://coin-images.coingecko.com/coins/images/54035/large/Transparent_bg.png?1738075331" alt="IP" class="token-icon">
+        </div>
+      </div>
+    </div>
+
+    <div class="checkbox-container">
+      <input type="checkbox" id="terms-checkbox">
+      <label for="terms-checkbox" class="checkbox-label">
+        I have reviewed and accept the <a href="https://halliday.xyz/legal/terms-of-use" target="_blank">Halliday Terms of Use</a>.
+      </label>
+    </div>
+    
+    <button class="button" id="continue-button" disabled>Continue</button>
+    
+    <div class="powered-by">
+      Powered by Halliday
+    </div>
+  </div>
+
+  <div id="swap-screen" class="container hidden absolute">
+    <h2 class="text-center">Cross-Chain Swap</h2>
+    <div id="back-button" class="back-button"></div>
+    <span class="workflow-detail-label">Last Update:</span>
+    <span id="last-update" class="workflow-detail-value"></span>
+    <br />
+    <span class="workflow-detail-label">ID:</span>
+    <span id="payment-id" class="workflow-detail-value"></span>
+    <br />
+    <span class="workflow-detail-label">Swap Steps:</span>
+    <ul id="swap-steps-list"></ul>
+    <span class="workflow-detail-label">Swap Status:</span>
+    <span id="swap-status" class="workflow-detail-value"></span>
+    <br />
+    <span class="workflow-detail-label">Context:</span>
+    <span id="swap-context" class="workflow-detail-value"></span>
+    <br />
+    <div id="swap-loading-spinner" class="swap-loading-spinner"></div>
+    <div class="powered-by sink">
+      Powered by Halliday
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+  <script src="./swap.js"></script>
+</body>
+</html>

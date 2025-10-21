@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onramp with Halliday</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="input-screen" class="container">
+    <h2 class="text-center">Onramp to IP</h2>
+
+    <div class="radio-group">
+      <div class="radio-option">
+        <input type="radio" id="stripe" name="provider" value="stripe" checked>
+        <label for="stripe">Stripe</label>
+      </div>
+      <div class="radio-option">
+        <input type="radio" id="transak" name="provider" value="transak">
+        <label for="transak">Transak</label>
+      </div>
+      <div class="radio-option">
+        <input type="radio" id="moonpay" name="provider" value="moonpay">
+        <label for="moonpay">Moonpay</label>
+      </div>
+    </div>
+    
+    <div class="input-section">
+      <div class="input-label">You pay</div>
+      <div class="input-container">
+        <input type="text" class="amount-input" id="pay-amount" placeholder="-" autocomplete="off" value="">
+        <div class="currency-label">
+          USD <label alt="USD" class="token-icon usa-icon"></label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="output-section">
+      <div class="output-label">You receive</div>
+      <div class="output-container">
+        <div class="output-amount" id="receive-amount">-</div>
+        <div class="output-usd" id="receive-usd">$-</div>
+        <div class="output-currency">
+          IP <img src="https://coin-images.coingecko.com/coins/images/54035/large/Transparent_bg.png?1738075331" alt="IP" class="token-icon">
+        </div>
+      </div>
+    </div>
+
+    <div class="confirm-content">
+      <div class="input-label">Wallet address to onramp $IP to on Story Mainnet</div>
+      <input id="address-input" class="address-input" autocomplete="off" type="text" placeholder="0x..." />
+    </div>
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="terms-checkbox">
+      <label for="terms-checkbox" class="checkbox-label">
+        I have reviewed and accept the <a href="https://halliday.xyz/legal/terms-of-use" target="_blank">Halliday Terms of Use</a>.
+      </label>
+    </div>
+    
+    <button class="button" id="continue-button" disabled>Continue</button>
+    
+    <div class="powered-by">
+      Powered by Halliday
+    </div>
+  </div>
+
+  <div id="onramp-screen" class="container hidden">
+    <div id="back-button" class="back-button"></div>
+    <iframe id="onramp-iframe" class="onramp-iframe" src=""></iframe>
+    <div class="powered-by">
+      Powered by Halliday
+    </div>
+  </div>
+
+  <script src="./onramp.js"></script>
+</body>
+</html>
