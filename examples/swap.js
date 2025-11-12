@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const continueButton = document.getElementById('continue-button');
   const receiveUsdElement = document.getElementById('receive-usd');
   const receiveAmountElement = document.getElementById('receive-amount');
-  const termsCheckbox = document.getElementById('terms-checkbox');
   const backButton = document.getElementById('back-button');
   const inputScreen = document.getElementById('input-screen');
   const swapScreen = document.getElementById('swap-screen');
@@ -194,9 +193,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   function updateContinueButton() {
     const outTokenAmount = parseFloat(receiveAmountElement.innerText) || 0;
     const isAmountValid = outTokenAmount > 0;
-    const areTermsAccepted = termsCheckbox.checked;
     
-    if (isAmountValid && areTermsAccepted) {
+    if (isAmountValid) {
       continueButton.disabled = false;
       continueButton.classList.add('enabled');
     } else {
@@ -362,7 +360,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   amountInput.addEventListener('input', updateQuote);
-  termsCheckbox.addEventListener('change', updateContinueButton);
   continueButton.addEventListener('click', onContinueButtonClick);
   backButton.addEventListener('click', onBackButtonClick);
 
