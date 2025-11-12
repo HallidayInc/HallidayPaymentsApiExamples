@@ -188,7 +188,8 @@ h2 {
   line-height: 1.4;
 }
 
-.terms-label a {
+.terms-label a,
+.confirm-content a {
   color: #000;
   text-decoration: underline;
 }
@@ -282,6 +283,11 @@ h2 {
 
 .confirm-content > input {
   padding: 16px;
+}
+
+.confirm-content .input-label {
+  display: block;
+  line-height: 1.4;
 }
 
 /* Utility Classes */
