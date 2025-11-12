@@ -174,21 +174,21 @@ h2 {
   margin-top: 4px;
 }
 
-/* Checkbox */
-.checkbox-container {
+/* Terms container */
+.terms-container {
   margin-bottom: 24px;
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-.checkbox-label {
+.terms-label {
   font-size: 14px;
   color: #666;
   line-height: 1.4;
 }
 
-.checkbox-label a {
+.terms-label a {
   color: #000;
   text-decoration: underline;
 }
