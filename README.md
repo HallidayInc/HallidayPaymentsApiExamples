@@ -29,3 +29,8 @@ Once the local server app is running in the terminal the following examples can 
 
 - `./examples/onramp.js` at http://localhost:8000/onramp.html
 - `./examples/swap.js` at http://localhost:8000/swap.html
+
+### Payment recovery examples
+
+- `./examples/withdraw.js` at http://localhost:8000/withdraw.html
+- `./examples/retry.js` at http://localhost:8000/retry.html
