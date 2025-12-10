@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Withdrawal</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="selection-screen" class="container short">
+    <h2 class="text-center">Payment Withdrawal</h2>
+
+    <div class="confirm-content">
+      <div class="input-label text-center">
+        Withdraw an incomplete payment using the payment's owner wallet. Try with an EIP-1193 wallet like MetaMask, Rabby, or Phantom.
+      </div>
+    </div>
+
+    <div class="connect-wallet-container">
+      <button class="button enabled" id="connect-wallet">Connect Wallet</button>
+      <p class="info-label hidden" id="connected-wallet-info">
+        Connected wallet address to perform swap:
+        <br />
+        <span id="address" class="address-label"></span>
+        <br />
+        <button class="disconnect" id="disconnect">Disconnect</button>
+      </p>
+    </div>
+
+    <div class="transaction-history-container">
+      <div id="history-loading-spinner" class="loading-spinner hidden"></div>
+      <ul id="transaction-history-items"></ul>
+    </div>
+
+    <div class="powered-by">
+      Powered by Halliday
+    </div>
+  </div>
+
+  <div id="signing-screen" class="container hidden absolute">
+    <h2 class="text-center">Withdraw</h2>
+    <div id="back-button" class="back-button"></div>
+    <br />
+    <span class="input-label text-center">No user gas tokens are spent when executing a withdrawal.</span>
+    <div id="payment-information-container" class="payment-info-card"></div>
+    <div id="withdrawal-options-container"></div>
+    <br />
+    <div class="powered-by sink">
+      Powered by Halliday
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
+  <script src="./withdraw.js"></script>
+</body>
+</html>

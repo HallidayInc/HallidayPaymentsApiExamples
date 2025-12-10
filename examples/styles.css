@@ -29,6 +29,10 @@ h2 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
 }
 
+.container.short {
+  min-height: 100px;
+}
+
 /* Radio Group */
 .radio-group {
   display: flex;
@@ -219,7 +223,7 @@ h2 {
   cursor: not-allowed;
 }
 
-.swap-loading-spinner,
+.loading-spinner,
 .button.loading:after {
   content: '';
   position: absolute;
@@ -227,7 +231,7 @@ h2 {
   left: 50%;
   width: 28px;
   height: 28px;
-  margin: -20px 0 0 -20px;
+  margin: -20px 0px 0px -18px;
   border: 6px solid transparent;
   border-top: 6px solid #3df57b;
   border-bottom: 6px solid #3df57b;
@@ -385,4 +389,168 @@ span.workflow-detail-value {
   font-weight: normal;
   color: #000;
   list-style: none;
+}
+
+.transaction-history-container {
+  position: relative;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.transaction-history-container ul li {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0;
+  padding: 16px;
+  font-size: 12px;
+  color: #000;
+  list-style: none;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.transaction-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.transaction-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.transaction-type {
+  font-weight: 600;
+  font-size: 14px;
+  color: #000;
+}
+
+.transaction-route {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+.transaction-time {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.transaction-stuck {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+}
+
+.payment-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 24px 0;
+  padding: 16px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.payment-info-card span {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.payment-info-card .payment-type {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.withdrawal-option-card {
+  padding: 16px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.withdrawal-option-card .token-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.withdrawal-option-card .token-amount,
+.withdrawal-option-card .transaction {
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.small-button {
+  position: relative;
+  align-self: center;
+  background: #3df57b;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 6px 0px;
+  padding: 10px 20px;
+  transition: background .2s;
+  white-space: nowrap;
+}
+
+.small-button:hover {
+  background: #2de56b;
+}
+
+.small-button.enabled {
+  background: #3df57b;
+  color: #000;
+}
+
+.small-button.enabled:hover {
+  background: #2de56b;
+}
+
+.small-button:disabled,
+.small-button.loading {
+  cursor: not-allowed;
+  background: #ccc;
+  color: #999;
+}
+
+.small-button.loading:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -12px 0 0 -8px;
+  border: 3px solid transparent;
+  border-top: 3px solid #3df57b;
+  border-bottom: 3px solid #3df57b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.transaction-history-container .loading-spinner {
+  margin: -18px 0 0 -12px;
 }
