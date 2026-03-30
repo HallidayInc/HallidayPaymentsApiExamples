@@ -294,6 +294,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     let swapData;
     try {
       swapData = await acceptQuote();
+
+      // Handle user verification if required (>= $300 owner verify, >= $1M withdrawal sim)
+      // Loop to handle up to two verification round-trips
+      while (swapData?.next_instruction?.type === 'USER_VERIFY') {
+        const { verification_token, verifications } = swapData.next_instruction;
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+
+        const signatures = await Promise.all(
+          verifications.map(async (v) => {
+            let signature;
+            if (v.sig_type === 'EIP712') {
+              const typedData = JSON.parse(v.payload);
+              const { EIP712Domain, ...types } = typedData.types;
+              signature = await signer.signTypedData(typedData.domain, types, typedData.message);
+            } else {
+              signature = await signer.signMessage(v.payload);
+            }
+            return { reason: v.reason, sig_type: v.sig_type, signature };
+          })
+        );
+
+        // Submit verification signatures to confirm endpoint
+        const verifyRes = await fetch('https://v2.prod.halliday.xyz/payments/confirm', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + HALLIDAY_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ verification_token, signatures })
+        });
+
+        if (verifyRes.status === 409) {
+          // Already confirmed — treat as success and break
+          break;
+        } else if (verifyRes.status === 400) {
+          // Quote expired or invalid — re-quote from scratch
+          alert('Quote expired. Please try again.');
+          continueButton.classList.remove('loading');
+          updateQuote();
+          return;
+        } else if (verifyRes.status === 401) {
+          // Signature verification failed — retry same verification round
+          console.warn('Signature verification failed, retrying...');
+          continue;
+        }
+
+        swapData = await verifyRes.json();
+      }
+
       // Poll status and show it in the UI
       setInterval(async () => {
         showSwapStatus(swapData);

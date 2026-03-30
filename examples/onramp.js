@@ -1,9 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const connectWalletButton = document.getElementById('connect-wallet');
+  const connectedWalletInfo = document.getElementById('connected-wallet-info');
+  const disconnectButton = document.getElementById('disconnect');
+  const addressLabel = document.getElementById('address');
   const payAmountInput = document.getElementById('pay-amount');
   const receiveAmountElement = document.getElementById('receive-amount');
   const receiveUsdElement = document.getElementById('receive-usd');
   const continueButton = document.getElementById('continue-button');
-  const addressInput = document.getElementById('address-input');
   const inputScreen = document.getElementById('input-screen');
   const onrampScreen = document.getElementById('onramp-screen');
   const backButton = document.getElementById('back-button');
@@ -16,9 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const onramps = [ 'stripe', 'transak', 'moonpay' ];
   const fiatOnrampPayInMethods = [ 'CREDIT_CARD' ];
   const quotes = {};
+  let userAddress;
 
   if (!HALLIDAY_API_KEY || HALLIDAY_API_KEY === '_your_api_key_here_') {
     alert('HALLIDAY_API_KEY is missing!');
+  }
+
+  if (!window.ethereum) {
+    alert('No EIP-1193 compliant wallet available. Install MetaMask to continue.');
+    return;
   }
 
   function resetQuoteCache() {
@@ -50,16 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return result;
   }
 
-  function isValidEthAddress(addr) {
-    return /^0x[a-fA-F0-9]{40}$/.test(addr);
-  }
-
   function updateContinueButton() {
     const outTokenAmount = parseFloat(receiveAmountElement.innerText) || 0;
     const isAmountValid = outTokenAmount > 0;
-    const validAddress = isValidEthAddress(addressInput.value);
-    
-    if (isAmountValid && validAddress) {
+
+    if (isAmountValid && userAddress) {
       continueButton.disabled = false;
       continueButton.classList.add('enabled');
     } else {
@@ -143,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function acceptQuote() {
-    const destinationAddress = addressInput.value;
     const selectedQuote = quotes[getSelectedOnramp()];
     const res = await fetch('https://v2.prod.halliday.xyz/payments/confirm', {
       method: 'POST',
@@ -154,8 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({
         payment_id: selectedQuote.paymentId,
         state_token: selectedQuote.stateToken,
-        owner_address: destinationAddress,
-        destination_address: destinationAddress
+        owner_address: userAddress,
+        destination_address: userAddress
       })
     });
 
@@ -224,9 +227,59 @@ document.addEventListener('DOMContentLoaded', () => {
     continueButton.classList.add('loading');
     continueButton.classList.remove('enabled');
 
-    const acceptedQuote = await acceptQuote();
-    const paymentId = acceptedQuote.payment_id;
-    const onrampUrl = acceptedQuote.next_instruction.funding_page_url;
+    let confirmResult = await acceptQuote();
+    const paymentId = confirmResult.payment_id;
+
+    // Handle user verification if required (>= $300 owner verify, >= $1M withdrawal sim)
+    // Loop to handle up to two verification round-trips
+    while (confirmResult.next_instruction?.type === 'USER_VERIFY') {
+      const { verification_token, verifications } = confirmResult.next_instruction;
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      const signatures = await Promise.all(
+        verifications.map(async (v) => {
+          let signature;
+          if (v.sig_type === 'EIP712') {
+            const typedData = JSON.parse(v.payload);
+            const { EIP712Domain, ...types } = typedData.types;
+            signature = await signer.signTypedData(typedData.domain, types, typedData.message);
+          } else {
+            signature = await signer.signMessage(v.payload);
+          }
+          return { reason: v.reason, sig_type: v.sig_type, signature };
+        })
+      );
+
+      // Submit verification signatures to confirm endpoint
+      const verifyRes = await fetch('https://v2.prod.halliday.xyz/payments/confirm', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + HALLIDAY_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ verification_token, signatures })
+      });
+
+      if (verifyRes.status === 409) {
+        // Already confirmed — treat as success and break
+        break;
+      } else if (verifyRes.status === 400) {
+        // Quote expired or invalid — re-quote from scratch
+        alert('Quote expired. Please try again.');
+        continueButton.classList.remove('loading');
+        updateQuote();
+        return;
+      } else if (verifyRes.status === 401) {
+        // Signature verification failed — retry same verification round
+        console.warn('Signature verification failed, retrying...');
+        continue;
+      }
+
+      confirmResult = await verifyRes.json();
+    }
+
+    const onrampUrl = confirmResult.next_instruction.funding_page_url;
 
     paymentStatusInterval = setInterval(async () => {
       console.log('payment status:', paymentId, await getPaymentStatus(paymentId));
@@ -247,9 +300,32 @@ document.addEventListener('DOMContentLoaded', () => {
     updateQuote();
   }
 
+  connectWalletButton.addEventListener('click', async () => {
+    try {
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+      userAddress = accounts[0];
+      addressLabel.innerText = userAddress;
+      connectWalletButton.classList.add('hidden');
+      connectedWalletInfo.classList.remove('hidden');
+      updateContinueButton();
+    } catch(e) {
+      console.error(e);
+    }
+  });
+
+  disconnectButton.addEventListener('click', async () => {
+    await ethereum.request({
+      method: 'wallet_revokePermissions',
+      params: [{ eth_accounts: {} }]
+    });
+    userAddress = undefined;
+    connectWalletButton.classList.remove('hidden');
+    connectedWalletInfo.classList.add('hidden');
+    updateContinueButton();
+  });
+
   payAmountInput.addEventListener('input', updateQuote);
   continueButton.addEventListener('click', onContinueButtonClick);
-  addressInput.addEventListener('input', updateContinueButton);
   backButton.addEventListener('click', onBackButtonClick);
 
   // Update quote after a shown quote expires
@@ -264,6 +340,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 1000);
 
   // Initialize
+  const queryWallet = await ethereum.request({ method: 'eth_accounts' });
+  const alreadyConnected = queryWallet.length !== 0;
+
+  if (alreadyConnected) {
+    connectWalletButton.classList.add('hidden');
+    connectedWalletInfo.classList.remove('hidden');
+    userAddress = queryWallet[0];
+    addressLabel.innerText = userAddress;
+  } else {
+    connectWalletButton.classList.remove('hidden');
+    connectedWalletInfo.classList.add('hidden');
+  }
+
   resetQuoteCache();
   updateContinueButton();
   payAmountInput.focus();

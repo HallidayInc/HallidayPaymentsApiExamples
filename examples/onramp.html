@@ -46,11 +46,15 @@
       </div>
     </div>
 
-    <div class="confirm-content">
-      <div class="input-label">
-        Wallet address to onramp $IP to on Story. This wallet address will own the payment, <a href="https://docs.halliday.xyz/pages/otw" target="_blank">learn more here</a>.
-      </div>
-      <input id="address-input" class="address-input" autocomplete="off" type="text" placeholder="0x..." />
+    <div class="connect-wallet-container">
+      <button class="button enabled hidden" id="connect-wallet">Connect Wallet</button>
+      <p class="info-label hidden" id="connected-wallet-info">
+        Connected wallet address to perform onramp:
+        <br />
+        <span id="address" class="address-label"></span>
+        <br />
+        <button class="disconnect" id="disconnect">Disconnect</button>
+      </p>
     </div>
     
     <div class="terms-container">
@@ -74,6 +78,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.15.0/dist/ethers.umd.min.js"></script>
   <script src="./onramp.js"></script>
 </body>
 </html>
