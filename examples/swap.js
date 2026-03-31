@@ -305,14 +305,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const signatures = await Promise.all(
           verifications.map(async (v) => {
             let signature;
-            if (v.sig_type === 'EIP712') {
+            if (v.signature_type === 'EIP712') {
               const typedData = JSON.parse(v.payload);
               const { EIP712Domain, ...types } = typedData.types;
               signature = await signer.signTypedData(typedData.domain, types, typedData.message);
             } else {
               signature = await signer.signMessage(v.payload);
             }
-            return { reason: v.reason, sig_type: v.sig_type, signature };
+            return { reason: v.reason, signature_type: v.signature_type, signature };
           })
         );
 
