@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           } else {
             signature = await signer.signMessage(v.payload);
           }
-          return { reason: v.reason, signature_type: v.signature_type, signature };
+          return { reason: v.reason, signature };
         })
       );
 
