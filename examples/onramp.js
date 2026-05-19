@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const HALLIDAY_API_KEY = '_your_api_key_here_';
   const inputAsset = 'usd';
-  const outputAsset = 'story:0x';
+  const outputAsset = 'megaeth:0x28b7e77f82b25b95953825f1e3ea0e36c1c29861';
   const radioButtons = [];
   const onramps = [ 'stripe', 'transak', 'moonpay' ];
   const fiatOnrampPayInMethods = [ 'CREDIT_CARD' ];
@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ) {
         const issue = f.issues[0];
         const onramp = issue.source;
+        if (!quotes[onramp]) console.error('Quote not found for this onramp provider.');
         quotes[onramp].price = `Error: ${issue.message}`;
         quotes[onramp].expiration = expiration;
       }
@@ -177,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const price = (+quotes[selectedOnramp].price).toFixed(2);
       const aggPrice = (+quotes[selectedOnramp].prices[outputAsset]).toFixed(2);
       const fees = (+quotes[selectedOnramp].fees).toFixed(3);
-      receiveUsdElement.innerHTML = `$${price} per token, Total fees $${fees}.<br />IP price $${aggPrice}.`;
+      receiveUsdElement.innerHTML = `$${price} per token, Total fees $${fees}.<br />MEGA price $${aggPrice}.`;
     }
     updateContinueButton();
   }

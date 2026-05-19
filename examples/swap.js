@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const inputTokenAddress = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // USDC on Base
   const HALLIDAY_API_KEY = '_your_api_key_here_';
   const inputAsset = 'base:' + inputTokenAddress;
-  const outputAsset = 'story:0x';
+  const outputAsset = 'megaeth:0x28b7e77f82b25b95953825f1e3ea0e36c1c29861';
   let quote = {};
   let walletBalance;
   let userAddress;
