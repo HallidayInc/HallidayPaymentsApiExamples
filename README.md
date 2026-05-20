@@ -15,7 +15,7 @@ npm install
 npm start
 ```
 
-Make sure you set your Halliday API key in the JS files! See each JS file in `examples/`.
+Make sure you set your Halliday API key in the JS files! See each JS file in `examples/`. Get a free API key here: https://dashboard.halliday.xyz
 
 ```js
 const HALLIDAY_API_KEY = '_your_api_key_here_';
