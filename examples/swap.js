@@ -98,14 +98,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const data = await res.json();
-    console.log('getQuote', data);
+    console.log('getQuote response status:', res.status, 'quote count:', data?.quotes?.length ?? 0);
 
     resetQuoteCache();
 
     const expiration = new Date(data.accept_by);
     const stateToken = data.state_token;
     data.quotes.forEach((quoteData, i) => {
-      console.log(quoteData, i);
+      console.log('quote received:', i, quoteData?.onramp);
       const paymentId = quoteData.payment_id;
       const outputAmount = quoteData.output_amount.amount;
       const price = (inputAmount / outputAmount).toString();
@@ -155,14 +155,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw Error(JSON.stringify(data));
+        throw Error(`Request failed with status ${res.status}.`);
       }
 
-      console.log('acceptQuote', data);
+      console.log('acceptQuote response status:', res.status);
       return data;
     } catch(e) {
       console.error('acceptQuote error', e);
-      console.log('requestBody', requestBody);
+      console.error('acceptQuote request failed without logging request credentials.');
     }
   }
 
@@ -180,10 +180,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw Error(JSON.stringify(data));
+        throw Error(`Request failed with status ${res.status}.`);
       }
 
-      console.log('getSwapStatus', data);
+      console.log('getSwapStatus response status:', res.status, 'payment status:', data?.status);
       return data;
     } catch(e) {
       console.error('getSwapStatus error', e);
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadingTimeout = setTimeout(async () => {
       // Get a quote in own function
       await getQuote(value);
-      console.log(value, quote);
+      console.log('Quote input changed:', value);
       // Set input using a function that checks the radio
       setUpdatedOutputAmount();
       continueButton.classList.remove('loading');
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     } catch(e) {
-      console.error('Error showing the latest status in the UI', e, swapData, status);
+        console.error('Error showing the latest status in the UI', e);
     }
   }
 
@@ -295,9 +295,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       swapData = await acceptQuote();
 
-      // Handle user verification if required (>= $300 owner verify, >= $1M withdrawal sim)
-      // Loop to handle up to two verification round-trips
+      // Limit verification round-trips to prevent an unbounded signing loop.
+      let verificationAttempts = 0;
       while (swapData?.next_instruction?.type === 'USER_VERIFY') {
+        if (verificationAttempts >= 3) {
+          throw new Error('User verification did not complete after 3 attempts.');
+        }
+        verificationAttempts += 1;
         const { verification_token, verifications } = swapData.next_instruction;
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
@@ -336,9 +340,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           updateQuote();
           return;
         } else if (verifyRes.status === 401) {
-          // Signature verification failed — retry same verification round
-          console.warn('Signature verification failed, retrying...');
+          if (verificationAttempts >= 3) {
+            throw new Error('Signature verification failed after 3 attempts.');
+          }
+          console.warn(`Signature verification failed (attempt ${verificationAttempts}/3); retrying...`);
           continue;
+        } else if (!verifyRes.ok) {
+          throw new Error(`Verification request failed with status ${verifyRes.status}.`);
         }
 
         swapData = await verifyRes.json();
@@ -366,7 +374,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       paymentIdText.innerText = swapData.payment_id;
       swapStatusText.innerText = swapData.status;
     } catch(e) {
-      console.error('Malformed swap data', e, swapData);
+      console.error('Malformed swap data', e);
     }
 
     try {

@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const data = await res.json();
-    console.log('getQuote', data);
+    console.log('getQuote response status:', res.status, 'quote count:', data?.quotes?.length ?? 0);
 
     resetQuoteCache();
 
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     const data = await res.json();
-    console.log('acceptQuote', data);
+    console.log('acceptQuote response status:', res.status);
     return data;
   }
 
@@ -231,9 +231,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     let confirmResult = await acceptQuote();
     const paymentId = confirmResult.payment_id;
 
-    // Handle user verification if required (>= $300 owner verify, >= $1M withdrawal sim)
-    // Loop to handle up to two verification round-trips
+    // Limit verification round-trips to prevent an unbounded signing loop.
+    let verificationAttempts = 0;
     while (confirmResult.next_instruction?.type === 'USER_VERIFY') {
+      if (verificationAttempts >= 3) {
+        throw new Error('User verification did not complete after 3 attempts.');
+      }
+      verificationAttempts += 1;
       const { verification_token, verifications } = confirmResult.next_instruction;
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -272,9 +276,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateQuote();
         return;
       } else if (verifyRes.status === 401) {
-        // Signature verification failed — retry same verification round
-        console.warn('Signature verification failed, retrying...');
+        if (verificationAttempts >= 3) {
+          throw new Error('Signature verification failed after 3 attempts.');
+        }
+        console.warn(`Signature verification failed (attempt ${verificationAttempts}/3); retrying...`);
         continue;
+      } else if (!verifyRes.ok) {
+        throw new Error(`Verification request failed with status ${verifyRes.status}.`);
       }
 
       confirmResult = await verifyRes.json();
@@ -283,7 +291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const onrampUrl = confirmResult.next_instruction.funding_page_url;
 
     paymentStatusInterval = setInterval(async () => {
-      console.log('payment status:', paymentId, await getPaymentStatus(paymentId));
+      console.log('payment status:', paymentId, (await getPaymentStatus(paymentId)).status);
     }, 5000);
 
     continueButton.classList.remove('loading');
