@@ -1,8 +1,9 @@
 const express = require('express');
 const port = 8000;
+const host = '127.0.0.1';
 const app = express();
 app.use(express.static('./examples'));
-app.listen(port, () => {
+app.listen(port, host, () => {
   console.log('Halliday Payments example apps that use the API');
   console.log(`\nOnramp to a token: \nhttp://localhost:${port}/onramp.html`);
   console.log(`\nSwap (single or cross-chain): \nhttp://localhost:${port}/swap.html`);

@@ -16,6 +16,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   let supportedAssets;
   let supportedChains;
 
+  // Escape API-provided values before inserting them into an HTML template.
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[character]));
+  }
+
   if (!HALLIDAY_API_KEY || HALLIDAY_API_KEY === '_your_api_key_here_') {
     alert('HALLIDAY_API_KEY is missing!');
   }
@@ -41,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw Error(JSON.stringify(data));
+        throw Error(`Request failed with status ${res.status}.`);
       }
 
       return data;
@@ -66,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
 
       if (!res.ok) {
-        throw Error(JSON.stringify(data));
+        throw Error(`Request failed with status ${res.status}.`);
       }
 
       return data;
@@ -207,17 +218,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       li.innerHTML = `
         <div class="transaction-info">
           <div class="transaction-row">
-            <span class="transaction-type">${type} (${status})</span>
+          <span class="transaction-type">${escapeHtml(type)} (${escapeHtml(status)})</span>
           </div>
-          <div class="transaction-route">${input} -> ${output} via ${provider}</div>
-          <div class="transaction-stuck">Stuck: ${amount}</div>
-          <div class="transaction-time">${time}</div>
+          <div class="transaction-route">${escapeHtml(input)} -&gt; ${escapeHtml(output)} via ${escapeHtml(provider)}</div>
+          <div class="transaction-stuck">Stuck: ${escapeHtml(amount)}</div>
+          <div class="transaction-time">${escapeHtml(time)}</div>
         </div>
         <button class="small-button">Withdraw</button>
       `;
 
       li.querySelector('.small-button').addEventListener('click', async () => {
-        console.log('withdraw: id', payment.payment_id, 'payment', payment, 'balances', balances);
+        console.log('Opening withdrawal flow for payment:', payment.payment_id);
         const paymentInfo = { paymentId: payment.payment_id, type, status, input, output, provider, amount, time }
         displaySigningPage(paymentInfo, balances);
       });
@@ -234,10 +245,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     selectionScreen.classList.add('hidden');
 
     paymentInformationContainer.innerHTML = `
-      <span class="payment-type">${type} (${status})</span>
-      <span class="payment-route">${input} -> ${output} via ${provider}</span>
-      <span class="payment-stuck">Stuck: ${amount}</span>
-      <span class="payment-time">${time}</span>
+      <span class="payment-type">${escapeHtml(type)} (${escapeHtml(status)})</span>
+      <span class="payment-route">${escapeHtml(input)} -&gt; ${escapeHtml(output)} via ${escapeHtml(provider)}</span>
+      <span class="payment-stuck">Stuck: ${escapeHtml(amount)}</span>
+      <span class="payment-time">${escapeHtml(time)}</span>
     `;
 
     withdrawalOptionsContainer.innerHTML = '';
@@ -251,8 +262,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const item = document.createElement('div');
       item.className = 'withdrawal-option-card';
       item.innerHTML = `
-        <div class="token-name">${supportedAssets[balance.token].name}</div>
-        <div class="token-amount">Amount stuck: ${_amount}</div>
+        <div class="token-name">${escapeHtml(supportedAssets[balance.token].name)}</div>
+        <div class="token-amount">Amount stuck: ${escapeHtml(_amount)}</div>
         <div class="transaction">
           <a target="_blank" class="hidden" href="">See Withdraw Transaction</a>
         </div>
