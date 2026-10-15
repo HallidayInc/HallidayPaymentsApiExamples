@@ -307,8 +307,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const chain = balance.token.split(':')[0];
         const { explorer } = supportedChains[chain];
         const link = item.querySelector('a');
-        link.setAttribute('href', `${explorer}tx/${withdrawal.transaction_hash}`);
-        link.classList.remove('hidden');
+        if (withdrawal.status === 'SUCCESS') {
+          link.setAttribute('href', `${explorer}tx/${withdrawal.transaction_hash}`);
+          link.classList.remove('hidden');
+        } else {
+          console.error('Status of withdrawal is not SUCCESS:', withdrawal);
+        }
 
         withdrawButton.disabled = true;
         withdrawButton.classList.remove('loading');
