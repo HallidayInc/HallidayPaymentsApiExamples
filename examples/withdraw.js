@@ -166,6 +166,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  async function getWithdrawStatus(paymentId) {
+    const res = await fetch(`https://v2.prod.halliday.xyz/payments?payment_id=${paymentId}`, {
+      headers: { 'Authorization': 'Bearer ' + HALLIDAY_API_KEY }
+    });
+    const { withdrawals } = await res.json();
+    return withdrawals.at(-1);
+  }
+
   async function showErringPayments(_userAddress) {
     transactionHistoryItemsContainer.innerHTML = '';
     historyLoadingSpinner.classList.remove('hidden');
@@ -292,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Poll every 5 seconds until the withdrawal lands onchain
         while (withdrawal.status === 'PENDING') {
           await new Promise(resolve => setTimeout(resolve, 5000));
-          withdrawal = await getWithdrawStatus(withdrawal.withdraw_id);
+          withdrawal = await getWithdrawStatus(paymentId);
         }
 
         // Show the resulting withdraw transaction on the proper block explorer
