@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         !quotes?.[f.issues?.[0]?.source]?.price
       ) {
         const issue = f.issues[0];
-        const onramp = issue.source;
+        const onramp = f.service_ids[0];
         if (!quotes[onramp]) console.error('Quote not found for this onramp provider.');
         quotes[onramp].price = `Error: ${issue.message}`;
         quotes[onramp].expiration = expiration;

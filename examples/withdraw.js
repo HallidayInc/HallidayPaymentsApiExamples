@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function getWalletPaymentHistory(address, paginationKey) {
     const params = new URLSearchParams({
-      category: 'ALL',
+      'categories[]': 'ALL',
       owner_address: address,
       ...(paginationKey && { pagination_key: paginationKey })
     });
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return data;
   }
 
-  async function getProcessingAddressBalances(paymentId) {
+  async function getProcessingAddressBalances(ownerAddress, paymentId) {
     try {
       const res = await fetch(`https://v2.prod.halliday.xyz/payments/balances`, {
         method: 'POST',
@@ -103,10 +103,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Authorization': 'Bearer ' + HALLIDAY_API_KEY,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ payment_id: paymentId })
+        body: JSON.stringify({
+          query: {
+            source: 'OWNER',
+            owner: ownerAddress,
+            scope: { kind: 'PAYMENT', payment_id: paymentId }
+          }
+        })
       });
 
       const data = await res.json();
+      if (data.errors) throw Error(JSON.stringify(data.errors));
       return data;
     } catch (e) {
       console.error('getProcessingAddressBalances error', e);
@@ -152,7 +159,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const data = await res.json();
-      return data.transaction_hash;
+      if (data.errors) throw Error(JSON.stringify(data.errors));
+      return data;
     } catch (e) {
       console.error('confirmWithdrawal error', e);
     }
@@ -188,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (payment.status === 'COMPLETE') continue;
 
-      const balances = await getProcessingAddressBalances(payment.payment_id);
+      const balances = await getProcessingAddressBalances(_userAddress, payment.payment_id);
       const amount = balances.balance_results.reduce((sum, item) => sum + +item.value.amount, 0);
 
       if (amount === 0) continue;
@@ -265,7 +273,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Fetch the withdraw signature data from the API
         const withdrawToAddress = userAddress; // user's connected wallet
-        const typedDataToSign = await getTypedData(withdrawToAddress, paymentId, balance.token, balance.value.amount);
+        const paymentId = balance.withdraw_from.payment_id;
+        const token = balance.token;
+        const amount = balance.value.amount;
+
+        const typedDataToSign = await getTypedData(withdrawToAddress, paymentId, token, amount);
         const { domain, types, message } = JSON.parse(typedDataToSign.withdraw_authorization);
         delete types.EIP712Domain;
 
@@ -274,14 +286,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         const signer = await provider.getSigner();
         const signature = await signer.signTypedData(domain, types, message);
 
-        // Send signature to API to be posted onchain
-        const txHash = await confirmWithdrawal(withdrawToAddress, paymentId, balance.token, balance.value.amount, signature);
+        // Send signature and state token to API to be posted onchain
+        let withdrawal = await confirmWithdrawal(withdrawToAddress, paymentId, token, amount, signature);
+
+        // Poll every 5 seconds until the withdrawal lands onchain
+        while (withdrawal.status === 'PENDING') {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          withdrawal = await getWithdrawStatus(withdrawal.withdraw_id);
+        }
 
         // Show the resulting withdraw transaction on the proper block explorer
         const chain = balance.token.split(':')[0];
         const { explorer } = supportedChains[chain];
         const link = item.querySelector('a');
-        link.setAttribute('href', `${explorer}tx/${txHash}`);
+        link.setAttribute('href', `${explorer}tx/${withdrawal.transaction_hash}`);
         link.classList.remove('hidden');
 
         withdrawButton.disabled = true;
