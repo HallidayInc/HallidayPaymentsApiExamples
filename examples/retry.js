@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function getTypedData(withdrawToAddress, paymentId, token, amount) {
+  async function getTypedData(withdrawToAddress, withdrawFrom, token, amount) {
     try {
       const res = await fetch(`https://v2.prod.halliday.xyz/payments/withdraw`, {
         method: 'POST',
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          payment_id: paymentId,
+          withdraw_from: withdrawFrom,
           token_amounts: [ { token, amount } ],
           recipient_address: withdrawToAddress,
         })
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function confirmWithdrawal(withdrawToAddress, paymentId, token, amount, signature) {
+  async function confirmWithdrawal(signature, stateToken) {
     try {
       const res = await fetch(`https://v2.prod.halliday.xyz/payments/withdraw/confirm`, {
         method: 'POST',
@@ -151,10 +151,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          payment_id: paymentId,
-          token_amounts: [ { token, amount } ],
-          recipient_address: withdrawToAddress,
-          owner_signature: signature
+          signature,
+          state_token: stateToken
         })
       });
 
@@ -374,7 +372,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Fetch the retry signature data from the API
         const withdrawToAddress = acceptQuoteRequest.next_instruction.deposit_info[0].deposit_address; // new quoted payment's deposit address
-        const typedDataToSign = await getTypedData(withdrawToAddress, paymentId, balance.token, balance.value.amount);
+        const typedDataToSign = await getTypedData(withdrawToAddress, balance.withdraw_from, balance.token, balance.value.amount);
         const { domain, types, message } = JSON.parse(typedDataToSign.withdraw_authorization);
         delete types.EIP712Domain;
 
@@ -384,7 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const signature = await signer.signTypedData(domain, types, message);
 
         // Send signature to API to be posted onchain
-        await confirmWithdrawal(withdrawToAddress, paymentId, balance.token, balance.value.amount, signature);
+        await confirmWithdrawal(signature, typedDataToSign.state_token);
 
         let statusUpdate = setInterval(async () => {
           const _status = await getStatus(newPaymentId);

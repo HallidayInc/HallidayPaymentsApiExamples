@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function getTypedData(withdrawToAddress, paymentId, token, amount) {
+  async function getTypedData(withdrawToAddress, withdrawFrom, token, amount) {
     try {
       const res = await fetch(`https://v2.prod.halliday.xyz/payments/withdraw`, {
         method: 'POST',
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          payment_id: paymentId,
+          withdraw_from: withdrawFrom,
           token_amounts: [ { token, amount } ],
           recipient_address: withdrawToAddress,
         })
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function confirmWithdrawal(withdrawToAddress, paymentId, token, amount, signature) {
+  async function confirmWithdrawal(signature, stateToken) {
     try {
       const res = await fetch(`https://v2.prod.halliday.xyz/payments/withdraw/confirm`, {
         method: 'POST',
@@ -151,10 +151,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          payment_id: paymentId,
-          token_amounts: [ { token, amount } ],
-          recipient_address: withdrawToAddress,
-          owner_signature: signature
+          signature,
+          state_token: stateToken
         })
       });
 
@@ -166,12 +164,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  async function getWithdrawStatus(paymentId) {
-    const res = await fetch(`https://v2.prod.halliday.xyz/payments?payment_id=${paymentId}`, {
+  async function getWithdrawStatus(withdrawId) {
+    const res = await fetch(`https://v2.prod.halliday.xyz/payments/withdraw/status?withdraw_id=${withdrawId}`, {
       headers: { 'Authorization': 'Bearer ' + HALLIDAY_API_KEY }
     });
-    const { withdrawals } = await res.json();
-    return withdrawals.at(-1);
+    return await res.json();
   }
 
   async function showErringPayments(_userAddress) {
@@ -281,11 +278,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Fetch the withdraw signature data from the API
         const withdrawToAddress = userAddress; // user's connected wallet
-        const paymentId = balance.withdraw_from.payment_id;
+        const withdrawFrom = balance.withdraw_from;
         const token = balance.token;
         const amount = balance.value.amount;
 
-        const typedDataToSign = await getTypedData(withdrawToAddress, paymentId, token, amount);
+        const typedDataToSign = await getTypedData(withdrawToAddress, withdrawFrom, token, amount);
         const { domain, types, message } = JSON.parse(typedDataToSign.withdraw_authorization);
         delete types.EIP712Domain;
 
@@ -295,12 +292,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const signature = await signer.signTypedData(domain, types, message);
 
         // Send signature and state token to API to be posted onchain
-        let withdrawal = await confirmWithdrawal(withdrawToAddress, paymentId, token, amount, signature);
+        let withdrawal = await confirmWithdrawal(signature, typedDataToSign.state_token);
 
         // Poll every 5 seconds until the withdrawal lands onchain
         while (withdrawal.status === 'PENDING') {
           await new Promise(resolve => setTimeout(resolve, 5000));
-          withdrawal = await getWithdrawStatus(paymentId);
+          withdrawal = await getWithdrawStatus(withdrawal.withdraw_id);
         }
 
         // Show the resulting withdraw transaction on the proper block explorer
